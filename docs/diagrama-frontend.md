@@ -1,41 +1,30 @@
 # Flujo del Frontend
 
-Aplicación Next.js (React + TypeScript) organizada por módulos funcionales, cada uno consumiendo la API del backend a través de un cliente HTTP compartido.
+Aplicación Next.js 16 (App Router, React 19 + TypeScript) organizada por módulos funcionales. El navegador solo habla con Next.js, que reenvía `/api/*` al backend.
 
 ## Navegación y módulos
 
 ```mermaid
 flowchart TD
-    Login[Acceso al backoffice]
-    Dash[Panel operativo<br/>estado general y gráficos]
+    Nav[Cabecera con pestañas<br/>Hoy · Reservas · Inventario · Hoteles]
 
-    subgraph Modulos["Módulos funcionales"]
-        Hoteles[Hoteles<br/>listado, búsqueda, alta]
-        Habitaciones[Tipos de habitación<br/>por hotel]
-        Inventario[Disponibilidad e inventario<br/>vista calendario/tabla]
-        Reservas[Reservas<br/>alta y consulta]
+    subgraph Rutas["Rutas"]
+        Hoy["/ — Operativa de hoy<br/>cifras del día y gráficas"]
+        Res["/reservations<br/>listado, alta, confirmar y cancelar"]
+        Inv["/inventory<br/>calendario de ocupación por hotel"]
+        Hot["/hotels<br/>listado, búsqueda y alta"]
+        Det["/hotels/[id]<br/>tipos de habitación y disponibilidad"]
     end
 
-    Client[Cliente HTTP<br/>fetch/SWR hacia la API]
+    Query[TanStack Query<br/>caché, reintentos, estados de carga]
+    Proxy[Next.js<br/>rewrite /api/* → backend]
     Backend[("API Spring Boot")]
 
-    Login --> Dash
-    Dash --> Hoteles
-    Dash --> Inventario
-    Dash --> Reservas
-
-    Hoteles --> Habitaciones
-    Habitaciones --> Inventario
-    Inventario --> Reservas
-
-    Hoteles --> Client
-    Habitaciones --> Client
-    Inventario --> Client
-    Reservas --> Client
-    Dash --> Client
-
-    Client -->|REST/JSON| Backend
-    Backend -->|REST/JSON| Client
+    Nav --> Hoy & Res & Inv & Hot
+    Hot --> Det
+    Hoy & Res & Inv & Hot & Det --> Query
+    Query -->|fetch /api/...| Proxy
+    Proxy -->|red interna de Docker| Backend
 ```
 
 ## Flujo de datos de una vista (ejemplo: Inventario)
@@ -43,24 +32,27 @@ flowchart TD
 ```mermaid
 sequenceDiagram
     participant U as Usuario
-    participant P as Página Inventario
-    participant H as Hook de datos (SWR)
-    participant API as Cliente HTTP
+    participant P as Página /inventory
+    participant Q as TanStack Query
+    participant N as Next.js (proxy)
     participant BE as Backend
 
-    U->>P: Selecciona hotel / tipo de habitación / rango de fechas
-    P->>H: Solicita disponibilidad
-    H->>API: Solicita disponibilidad (filtros)
-    API->>BE: Petición HTTP
-    BE-->>API: Datos de disponibilidad
-    API-->>H: Respuesta JSON
-    H-->>P: Datos normalizados
-    P-->>U: Vista de calendario/tabla con estado de ocupación
+    U->>P: Elige hotel y semana
+    P->>P: Muestra skeleton del calendario
+    P->>Q: useQuery(["inventory", hotel, desde, hasta])
+    Q->>N: GET /api/hotels/{id}/inventory?from&to
+    N->>BE: Reenvía la petición
+    BE-->>N: Días por tipo de habitación
+    N-->>Q: JSON
+    Q-->>P: Datos (en caché para volver atrás sin recargar)
+    P-->>U: Mapa de calor de ocupación
+    Note over Q,N: Si el backend no responde, se reintenta<br/>manteniendo el skeleton y un aviso de conexión
 ```
 
 ## Principios de diseño
 
-- **Por módulo**: cada módulo funcional (hoteles, tipos de habitación, inventario, reservas) tiene sus propias páginas, componentes y llamadas a la API.
-- **Panel operativo**: página de inicio con indicadores y gráficos del estado general de la operativa (ocupación, reservas del día), pensada para la lectura rápida durante la operación diaria.
-- **Capa de datos común**: un único cliente HTTP centraliza las llamadas al backend, facilitando el manejo de errores y la reutilización entre módulos.
-- **Listados con búsqueda y paginación**: las vistas de hoteles e inventario soportan búsqueda y paginación para trabajar con volúmenes elevados de registros.
+- **Por módulo**: `src/features/<módulo>` agrupa las vistas y formularios de cada área; `src/app` solo define las rutas.
+- **Carga previa visible**: cada página tiene un esqueleto completo como fallback de `Suspense` y cada bloque su propio skeleton mientras llegan los datos.
+- **Lectura rápida**: la portada resume el día en una franja de cifras (ocupación, entradas, salidas, estancias activas) y gráficas de evolución.
+- **Errores comprensibles**: los fallos de negocio del backend (p. ej. sin disponibilidad) se muestran dentro del formulario o en diálogos nativos; los fallos transitorios se reintentan solos.
+- **Volumen elevado**: los listados paginan y filtran en el servidor; el buscador de hoteles sugiere resultados mientras se escribe.

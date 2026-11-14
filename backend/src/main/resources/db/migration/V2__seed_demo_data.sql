@@ -103,9 +103,9 @@ WITH params AS (
 )
 SELECT gen_random_uuid() AS id,
        p.id AS room_type_id,
-       x.first_name || ' ' || x.last_name AS guest_name,
-       lower(translate(x.first_name || '.' || x.last_name || g, 'áéíóúñ', 'aeioun')) || '@example.com' AS guest_email,
-       '+34 6' || lpad((floor(random() * 100000000))::text, 8, '0') AS guest_phone,
+       x.first_name || ' ' || x.last_name AS holder_name,
+       lower(translate(x.first_name || '.' || x.last_name || g, 'áéíóúñ', 'aeioun')) || '@example.com' AS holder_email,
+       '+34 6' || lpad((floor(random() * 100000000))::text, 8, '0') AS holder_phone,
        pr.check_in,
        least(pr.check_in + pr.nights, current_date + 90) AS check_out,
        pr.rooms_count,
@@ -153,9 +153,9 @@ FROM (
 ) b
 WHERE b.id = i.id;
 
-INSERT INTO reservation (id, room_type_id, guest_name, guest_email, guest_phone, check_in, check_out,
+INSERT INTO reservation (id, room_type_id, holder_name, holder_email, holder_phone, check_in, check_out,
                          rooms_count, status, total_price, created_at)
-SELECT r.id, r.room_type_id, r.guest_name, r.guest_email, r.guest_phone, r.check_in, r.check_out,
+SELECT r.id, r.room_type_id, r.holder_name, r.holder_email, r.holder_phone, r.check_in, r.check_out,
        r.rooms_count, r.status,
        coalesce((SELECT sum(i.price) FROM inventory i
                  WHERE i.room_type_id = r.room_type_id

@@ -46,9 +46,9 @@ CREATE INDEX idx_inventory_date ON inventory (date);
 CREATE TABLE reservation (
     id           UUID PRIMARY KEY,
     room_type_id UUID           NOT NULL REFERENCES room_type (id),
-    guest_name   VARCHAR(150)   NOT NULL,
-    guest_email  VARCHAR(150)   NOT NULL,
-    guest_phone  VARCHAR(30),
+    holder_name   VARCHAR(150)   NOT NULL,
+    holder_email  VARCHAR(150)   NOT NULL,
+    holder_phone  VARCHAR(30),
     check_in     DATE           NOT NULL,
     check_out    DATE           NOT NULL,
     rooms_count  INTEGER        NOT NULL CHECK (rooms_count > 0),

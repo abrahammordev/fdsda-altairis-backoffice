@@ -40,9 +40,9 @@ erDiagram
     RESERVATION {
         uuid id PK
         uuid room_type_id FK
-        string guest_name
-        string guest_email
-        string guest_phone
+        string holder_name
+        string holder_email
+        string holder_phone
         date check_in
         date check_out
         int rooms_count
@@ -57,7 +57,7 @@ erDiagram
 - **HOTEL**: datos principales del hotel (nombre, ubicación, categoría). Es la raíz del catálogo.
 - **ROOM_TYPE**: tipos de habitación asociados a un hotel (p. ej. doble, suite), con capacidad y precio base.
 - **INVENTORY**: disponibilidad de un tipo de habitación para una fecha concreta (habitaciones totales, disponibles y precio del día). Un registro por tipo de habitación y fecha.
-- **RESERVATION**: reserva de un tipo de habitación para un rango de fechas, con los datos del cliente, número de habitaciones, estado (pendiente, confirmada, cancelada) e importe total.
+- **RESERVATION**: reserva de un tipo de habitación para un rango de fechas, con los datos del titular (`holder_*`), número de habitaciones, estado (pendiente, confirmada, cancelada) e importe total.
 
 ## Notas de diseño
 

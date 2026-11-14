@@ -1,0 +1,19 @@
+# Entorno
+.env
+.env.*
+!.env.example
+
+# IDEs / SO
+.vscode/
+
+# Backend (Java / Maven)
+backend/target/
+
+# Frontend (Node / Next.js)
+node_modules/
+frontend/.next/
+frontend/out/
+frontend/build/
+
+# Logs
+*.log

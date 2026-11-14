@@ -86,9 +86,9 @@ frontend/src/
 ├── app/                 Rutas (App Router): / (operativa de hoy), /reservations, /inventory, /hotels, /hotels/[id]
 ├── features/            Una carpeta por módulo con sus vistas y formularios
 │   ├── dashboard/       Cifras del día, ocupación, entradas, cartera de reservas, actividad reciente
-│   ├── reservations/    Listado con filtros, alta, confirmar/cancelar
+│   ├── reservations/    Listado con filtros, alta, edición, confirmar/cancelar
 │   ├── inventory/       Calendario de ocupación (mapa de calor) y carga de disponibilidad
-│   └── hotels/          Listado, ficha, tipos de habitación y buscador de hoteles
+│   └── hotels/          Listado, ficha, alta y edición de tipos de habitación, buscador de hoteles
 ├── components/
 │   ├── ui/              Card, Button, Form, Modal, Skeleton, Badge, Pagination...
 │   ├── charts/          Gráficas (Recharts) y franja de cifras del día
@@ -113,6 +113,7 @@ frontend/src/
 | GET | `/api/hotels/{hotelId}/inventory?from=&to=` | Vista calendario del hotel |
 | GET | `/api/reservations?search=&status=&hotelId=&from=&to=` | Listado paginado de reservas |
 | POST | `/api/reservations` | Alta: comprueba y descuenta disponibilidad noche a noche |
+| PUT | `/api/reservations/{id}` | Editar titular, fechas y habitaciones (reajusta la disponibilidad y el importe) |
 | PATCH | `/api/reservations/{id}/status` | Confirmar o cancelar (cancelar libera inventario) |
 | GET | `/api/dashboard/summary?date=` | Cifras del día: entradas, salidas, estancias activas, ocupación, estados |
 | GET | `/api/dashboard/occupancy?from=&to=` | Serie diaria de ocupación y llegadas para gráficas |
@@ -128,9 +129,9 @@ cd backend && ./mvnw test
 ## Módulos funcionales
 
 - **Hoteles**: alta de hoteles con sus datos principales (nombre, dirección, ciudad, país, categoría), listado con búsqueda y paginación para soportar grandes volúmenes de registros.
-- **Tipos de habitación**: creación de tipos de habitación asociados a un hotel (capacidad, descripción, precio base).
+- **Tipos de habitación**: creación y edición de tipos de habitación asociados a un hotel (capacidad, descripción, precio base).
 - **Disponibilidad e inventario**: registro de disponibilidad por tipo de habitación y fecha, con vistas (calendario/tabla) orientadas a la operativa diaria.
-- **Reservas**: alta de reservas sobre un tipo de habitación/hotel, con fechas, estado y datos del titular; portada "Operativa de hoy" con la actividad y el estado general.
+- **Reservas**: alta y edición de reservas sobre un tipo de habitación/hotel, con fechas, estado y datos del titular; portada "Operativa de hoy" con la actividad y el estado general.
 
 ## Documentación adicional
 

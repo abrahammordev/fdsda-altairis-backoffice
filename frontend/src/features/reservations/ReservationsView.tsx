@@ -2,7 +2,7 @@
 
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import clsx from "clsx";
-import { Ban, Check, Plus, Search } from "lucide-react";
+import { Ban, Check, Pencil, Plus, Search } from "lucide-react";
 import { useState } from "react";
 import { StatusBadge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
@@ -18,6 +18,7 @@ import { fmt, shortDate } from "@/lib/format";
 import { useDebounced } from "@/lib/hooks";
 import { STATUS, STATUS_ORDER } from "@/lib/status";
 import type { Reservation, ReservationStatus } from "@/lib/types";
+import { EditReservationForm } from "./EditReservationForm";
 import { ReservationForm } from "./ReservationForm";
 
 const PAGE_SIZE = 20;
@@ -30,6 +31,7 @@ export function ReservationsView() {
   const [to, setTo] = useState("");
   const [page, setPage] = useState(0);
   const [creating, setCreating] = useState(false);
+  const [editing, setEditing] = useState<Reservation | null>(null);
   const debouncedSearch = useDebounced(search);
 
   const resetPage = <T,>(setter: (v: T) => void) => (v: T) => {
@@ -172,6 +174,11 @@ export function ReservationsView() {
                       </td>
                       <td className="py-3">
                         <div className="flex justify-end gap-1.5">
+                          {r.status !== "CANCELLED" && (
+                            <Button size="sm" variant="ghost" onClick={() => setEditing(r)} aria-label={`Editar reserva de ${r.holderName}`}>
+                              <Pencil className="size-3.5" aria-hidden /> Editar
+                            </Button>
+                          )}
                           {r.status === "PENDING" && (
                             <Button size="sm" variant="secondary" onClick={() => changeStatus.mutate({ id: r.id, target: "CONFIRMED" })} disabled={changeStatus.isPending}>
                               <Check className="size-3.5" aria-hidden /> Confirmar
@@ -232,6 +239,9 @@ export function ReservationsView() {
 
       <Modal open={creating} onClose={() => setCreating(false)} title="Nueva reserva">
         <ReservationForm onCreated={() => setCreating(false)} />
+      </Modal>
+      <Modal open={editing !== null} onClose={() => setEditing(null)} title="Editar reserva">
+        {editing && <EditReservationForm key={editing.id} reservation={editing} onSaved={() => setEditing(null)} />}
       </Modal>
     </>
   );

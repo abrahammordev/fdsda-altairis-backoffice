@@ -10,6 +10,7 @@ import type {
   Page,
   Reservation,
   ReservationInput,
+  ReservationUpdateInput,
   ReservationStatus,
   RoomType,
   RoomTypeInput,
@@ -86,6 +87,7 @@ export const api = {
     byHotel: (hotelId: UUID) => request<RoomType[]>("GET", `/api/hotels/${hotelId}/room-types`),
     create: (hotelId: UUID, input: RoomTypeInput) =>
       request<RoomType>("POST", `/api/hotels/${hotelId}/room-types`, input),
+    update: (id: UUID, input: RoomTypeInput) => request<RoomType>("PUT", `/api/room-types/${id}`, input),
   },
   inventory: {
     byHotel: (hotelId: UUID, from: string, to: string) =>
@@ -104,6 +106,7 @@ export const api = {
       size?: number;
     }) => request<Page<Reservation>>("GET", withQuery("/api/reservations", q)),
     create: (input: ReservationInput) => request<Reservation>("POST", "/api/reservations", input),
+    update: (id: UUID, input: ReservationUpdateInput) => request<Reservation>("PUT", `/api/reservations/${id}`, input),
     changeStatus: (id: UUID, status: ReservationStatus) =>
       request<Reservation>("PATCH", `/api/reservations/${id}/status`, { status }),
   },

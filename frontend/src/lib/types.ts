@@ -111,6 +111,9 @@ export interface ReservationInput {
   status?: Exclude<ReservationStatus, "CANCELLED">;
 }
 
+/** Edición: titular, fechas y habitaciones. El hotel y el tipo de habitación no cambian. */
+export type ReservationUpdateInput = Omit<ReservationInput, "roomTypeId" | "status">;
+
 export interface DashboardSummary {
   date: IsoDate;
   totalHotels: number;

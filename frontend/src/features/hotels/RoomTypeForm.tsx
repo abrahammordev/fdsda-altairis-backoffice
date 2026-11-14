@@ -5,23 +5,42 @@ import { useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { Field, FormError, Input } from "@/components/ui/Form";
 import { api, ApiError } from "@/lib/api";
+import type { RoomType, RoomTypeInput } from "@/lib/types";
 
-export function RoomTypeForm({ hotelId, onCreated }: { hotelId: string; onCreated: () => void }) {
+/** Alta de un tipo de habitación o, si recibe `roomType`, edición del existente. */
+export function RoomTypeForm({
+  hotelId,
+  roomType,
+  onSaved,
+}: {
+  hotelId: string;
+  roomType?: RoomType;
+  onSaved: () => void;
+}) {
   const queryClient = useQueryClient();
-  const [form, setForm] = useState({ name: "", capacity: "2", basePrice: "", description: "" });
+  const [form, setForm] = useState({
+    name: roomType?.name ?? "",
+    capacity: String(roomType?.capacity ?? 2),
+    basePrice: roomType ? String(roomType.basePrice) : "",
+    description: roomType?.description ?? "",
+  });
 
   const mutation = useMutation({
-    mutationFn: () =>
-      api.roomTypes.create(hotelId, {
+    mutationFn: () => {
+      const input: RoomTypeInput = {
         name: form.name,
         capacity: Number(form.capacity),
         basePrice: Number(form.basePrice),
         description: form.description || undefined,
-      }),
+      };
+      return roomType ? api.roomTypes.update(roomType.id, input) : api.roomTypes.create(hotelId, input);
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["roomTypes", hotelId] });
       queryClient.invalidateQueries({ queryKey: ["inventory", hotelId] });
-      onCreated();
+      // El nombre del tipo aparece en el listado de reservas.
+      if (roomType) queryClient.invalidateQueries({ queryKey: ["reservations"] });
+      onSaved();
     },
   });
 
@@ -49,12 +68,17 @@ export function RoomTypeForm({ hotelId, onCreated }: { hotelId: string; onCreate
       <Field label="Descripción (opcional)" error={fieldErrors.description} className="sm:col-span-2">
         <Input value={form.description} onChange={set("description")} />
       </Field>
+      {roomType && (
+        <p className="text-xs text-slate-500 sm:col-span-2">
+          El nuevo precio base se aplicará en las próximas cargas de disponibilidad; no cambia las noches ya cargadas ni las reservas existentes.
+        </p>
+      )}
       <div className="sm:col-span-2">
         <FormError message={mutation.error && Object.keys(fieldErrors).length === 0 ? mutation.error.message : null} />
       </div>
       <div className="flex justify-end sm:col-span-2">
         <Button type="submit" loading={mutation.isPending}>
-          Añadir tipo
+          {roomType ? "Guardar cambios" : "Añadir tipo"}
         </Button>
       </div>
     </form>

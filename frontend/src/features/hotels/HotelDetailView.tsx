@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { ChevronLeft, MapPin, Plus, Users } from "lucide-react";
+import { ChevronLeft, MapPin, Pencil, Plus, Users } from "lucide-react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useState } from "react";
@@ -16,6 +16,7 @@ import { InventoryForm } from "@/features/inventory/InventoryForm";
 import { InventoryPanel } from "@/features/inventory/InventoryPanel";
 import { api } from "@/lib/api";
 import { fmt } from "@/lib/format";
+import type { RoomType } from "@/lib/types";
 import { RoomTypeForm } from "./RoomTypeForm";
 
 export function HotelDetailView() {
@@ -23,6 +24,7 @@ export function HotelDetailView() {
   const hotel = useQuery({ queryKey: ["hotels", id], queryFn: () => api.hotels.get(id) });
   const roomTypes = useQuery({ queryKey: ["roomTypes", id], queryFn: () => api.roomTypes.byHotel(id) });
   const [modal, setModal] = useState<"roomType" | "inventory" | null>(null);
+  const [editing, setEditing] = useState<RoomType | null>(null);
   const close = () => setModal(null);
 
   if (hotel.isError) {
@@ -75,7 +77,18 @@ export function HotelDetailView() {
             <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
               {roomTypes.data.map((rt) => (
                 <li key={rt.id} className="rounded-xl border border-slate-200 p-4">
-                  <p className="font-medium text-slate-900">{rt.name}</p>
+                  <div className="flex items-start justify-between gap-2">
+                    <p className="font-medium text-slate-900">{rt.name}</p>
+                    <button
+                      type="button"
+                      onClick={() => setEditing(rt)}
+                      className="-m-1 rounded-md p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-700"
+                      aria-label={`Editar ${rt.name}`}
+                      title="Editar"
+                    >
+                      <Pencil className="size-4" aria-hidden />
+                    </button>
+                  </div>
                   <p className="mt-1 flex items-center gap-1 text-sm text-slate-500">
                     <Users className="size-3.5" aria-hidden /> {rt.capacity} {rt.capacity === 1 ? "persona" : "personas"}
                   </p>
@@ -107,7 +120,10 @@ export function HotelDetailView() {
       </div>
 
       <Modal open={modal === "roomType"} onClose={close} title="Nuevo tipo de habitación">
-        <RoomTypeForm hotelId={id} onCreated={close} />
+        <RoomTypeForm hotelId={id} onSaved={close} />
+      </Modal>
+      <Modal open={editing !== null} onClose={() => setEditing(null)} title="Editar tipo de habitación">
+        {editing && <RoomTypeForm key={editing.id} hotelId={id} roomType={editing} onSaved={() => setEditing(null)} />}
       </Modal>
       <Modal open={modal === "inventory"} onClose={close} title="Cargar disponibilidad">
         {roomTypes.data && <InventoryForm roomTypes={roomTypes.data} onSaved={close} />}

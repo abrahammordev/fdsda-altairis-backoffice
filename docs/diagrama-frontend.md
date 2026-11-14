@@ -6,14 +6,14 @@ Aplicación Next.js 16 (App Router, React 19 + TypeScript) organizada por módul
 
 ```mermaid
 flowchart TD
-    Nav[Cabecera con pestañas<br/>Hoy · Reservas · Inventario · Hoteles]
+    Nav[Cabecera con pestañas<br/>Dashboard · Reservas · Inventario · Hoteles]
 
     subgraph Rutas["Rutas"]
         Hoy["/ — Operativa de hoy<br/>cifras del día y gráficas"]
-        Res["/reservations<br/>listado, alta, confirmar y cancelar"]
+        Res["/reservations<br/>listado, alta, edición, confirmar y cancelar"]
         Inv["/inventory<br/>calendario de ocupación por hotel"]
         Hot["/hotels<br/>listado, búsqueda y alta"]
-        Det["/hotels/[id]<br/>tipos de habitación y disponibilidad"]
+        Det["/hotels/[id]<br/>tipos de habitación (alta y edición) y disponibilidad"]
     end
 
     Query[TanStack Query<br/>caché, reintentos, estados de carga]

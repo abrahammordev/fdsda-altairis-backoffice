@@ -4,6 +4,7 @@ import es.viajesaltairis.backoffice.common.dto.PageResponse;
 import es.viajesaltairis.backoffice.reservation.dto.ChangeStatusRequest;
 import es.viajesaltairis.backoffice.reservation.dto.CreateReservationRequest;
 import es.viajesaltairis.backoffice.reservation.dto.ReservationResponse;
+import es.viajesaltairis.backoffice.reservation.dto.UpdateReservationRequest;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -19,6 +20,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -57,6 +59,12 @@ public class ReservationController {
     public ResponseEntity<ReservationResponse> create(@Valid @RequestBody CreateReservationRequest request) {
         ReservationResponse created = reservationService.create(request);
         return ResponseEntity.created(URI.create("/api/reservations/" + created.id())).body(created);
+    }
+
+    @PutMapping("/{id}")
+    @Operation(summary = "Editar titular, fechas y habitaciones (reajusta la disponibilidad)")
+    public ReservationResponse update(@PathVariable UUID id, @Valid @RequestBody UpdateReservationRequest request) {
+        return reservationService.update(id, request);
     }
 
     @PatchMapping("/{id}/status")

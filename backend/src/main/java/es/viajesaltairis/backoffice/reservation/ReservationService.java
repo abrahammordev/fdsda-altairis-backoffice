@@ -5,6 +5,7 @@ import es.viajesaltairis.backoffice.common.exception.NotFoundException;
 import es.viajesaltairis.backoffice.inventory.InventoryService;
 import es.viajesaltairis.backoffice.reservation.dto.CreateReservationRequest;
 import es.viajesaltairis.backoffice.reservation.dto.ReservationResponse;
+import es.viajesaltairis.backoffice.reservation.dto.UpdateReservationRequest;
 import es.viajesaltairis.backoffice.roomtype.RoomType;
 import es.viajesaltairis.backoffice.roomtype.RoomTypeService;
 import java.math.BigDecimal;
@@ -60,6 +61,29 @@ public class ReservationService {
                 request.holderEmail().trim().toLowerCase(), request.holderPhone(), request.checkIn(),
                 request.checkOut(), rooms, status, pricePerRoom.multiply(BigDecimal.valueOf(rooms)));
         return ReservationMapper.toResponse(reservationRepository.save(reservation));
+    }
+
+    /**
+     * Edita titular y estancia. Si cambian fechas o habitaciones, devuelve la estancia anterior al inventario
+     * y reserva la nueva con el precio de sus noches. Si la nueva no cabe, 409 y rollback: la reserva queda igual.
+     */
+    @Transactional
+    public ReservationResponse update(UUID id, UpdateReservationRequest request) {
+        Reservation reservation = getEntity(id);
+        reservation.updateHolder(request.holderName().trim(), request.holderEmail().trim().toLowerCase(),
+                request.holderPhone());
+
+        int rooms = request.roomsCount();
+        if (!reservation.hasSameStay(request.checkIn(), request.checkOut(), rooms)) {
+            UUID roomTypeId = reservation.getRoomType().getId();
+            inventoryService.release(roomTypeId, reservation.getCheckIn(), reservation.getCheckOut(),
+                    reservation.getRoomsCount());
+            BigDecimal pricePerRoom = inventoryService.reserve(roomTypeId, request.checkIn(), request.checkOut(),
+                    rooms);
+            reservation.changeStay(request.checkIn(), request.checkOut(), rooms,
+                    pricePerRoom.multiply(BigDecimal.valueOf(rooms)));
+        }
+        return ReservationMapper.toResponse(reservation);
     }
 
     /** Cambia el estado; al cancelar devuelve las habitaciones al inventario. */

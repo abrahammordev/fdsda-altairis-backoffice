@@ -12,6 +12,7 @@ import es.viajesaltairis.backoffice.inventory.dto.InventoryDayResponse;
 import es.viajesaltairis.backoffice.inventory.dto.UpsertInventoryRequest;
 import es.viajesaltairis.backoffice.reservation.dto.CreateReservationRequest;
 import es.viajesaltairis.backoffice.reservation.dto.ReservationResponse;
+import es.viajesaltairis.backoffice.reservation.dto.UpdateReservationRequest;
 import es.viajesaltairis.backoffice.roomtype.RoomTypeService;
 import es.viajesaltairis.backoffice.roomtype.dto.CreateRoomTypeRequest;
 import java.math.BigDecimal;
@@ -85,6 +86,46 @@ class ReservationServiceIntegrationTest {
         assertThat(available()).containsExactly(2, 2, 2);
         assertThatThrownBy(() -> reservationService.changeStatus(id, ReservationStatus.CONFIRMED))
                 .isInstanceOf(BusinessException.class);
+    }
+
+    @Test
+    void updateReservation_movesInventoryAndRecalculatesPrice() {
+        UUID id = reservationService.create(request(DAY1, DAY1.plusDays(2), 2)).id(); // días 1-2, 2 hab.
+
+        ReservationResponse r = reservationService.update(id, update(DAY1.plusDays(1), DAY1.plusDays(3), 1));
+
+        assertThat(r.checkIn()).isEqualTo(DAY1.plusDays(1));
+        assertThat(r.totalPrice()).isEqualByComparingTo("250.00"); // 100 + 150
+        assertThat(r.holderName()).isEqualTo("Titular Editado");
+        assertThat(available()).containsExactly(2, 1, 1);
+    }
+
+    @Test
+    void updateReservation_withoutAvailability_failsAndKeepsOriginal() {
+        UUID id = reservationService.create(request(DAY1, DAY1.plusDays(1), 1)).id();
+        reservationService.create(request(DAY1.plusDays(2), DAY1.plusDays(3), 2)); // agota el día 3
+
+        assertThatThrownBy(() -> reservationService.update(id, update(DAY1, DAY1.plusDays(3), 1)))
+                .isInstanceOf(BusinessException.class);
+
+        ReservationResponse unchanged = reservationService.findById(id);
+        assertThat(unchanged.checkOut()).isEqualTo(DAY1.plusDays(1));
+        assertThat(unchanged.holderName()).isEqualTo("Titular Test");
+        assertThat(available()).containsExactly(1, 2, 0);
+    }
+
+    @Test
+    void updateReservation_cancelled_isRejected() {
+        UUID id = reservationService.create(request(DAY1, DAY1.plusDays(1), 1)).id();
+        reservationService.changeStatus(id, ReservationStatus.CANCELLED);
+
+        assertThatThrownBy(() -> reservationService.update(id, update(DAY1, DAY1.plusDays(1), 1)))
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining("cancelada");
+    }
+
+    private UpdateReservationRequest update(LocalDate in, LocalDate out, int rooms) {
+        return new UpdateReservationRequest("Titular Editado", "test@test.com", null, in, out, rooms);
     }
 
     private CreateReservationRequest request(LocalDate in, LocalDate out, int rooms) {

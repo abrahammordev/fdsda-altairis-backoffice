@@ -89,6 +89,32 @@ public class Reservation {
         this.status = target;
     }
 
+    public void updateHolder(String name, String email, String phone) {
+        ensureActive();
+        this.holderName = name;
+        this.holderEmail = email;
+        this.holderPhone = phone;
+    }
+
+    /** Nueva estancia y precio. El service mueve antes el inventario. */
+    public void changeStay(LocalDate checkIn, LocalDate checkOut, int roomsCount, BigDecimal totalPrice) {
+        ensureActive();
+        this.checkIn = checkIn;
+        this.checkOut = checkOut;
+        this.roomsCount = roomsCount;
+        this.totalPrice = totalPrice;
+    }
+
+    public boolean hasSameStay(LocalDate checkIn, LocalDate checkOut, int roomsCount) {
+        return this.checkIn.equals(checkIn) && this.checkOut.equals(checkOut) && this.roomsCount == roomsCount;
+    }
+
+    private void ensureActive() {
+        if (!status.holdsInventory()) {
+            throw new BusinessException("No se puede modificar una reserva cancelada");
+        }
+    }
+
     @PrePersist
     void onCreate() {
         if (createdAt == null) {
